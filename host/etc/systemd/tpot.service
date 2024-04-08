@@ -4,7 +4,7 @@ Requires=docker.service
 After=docker.service
 
 [Service]
-Restart=always
+Restart=on-watchdog
 RestartSec=5
 TimeoutSec=infinity
 
