@@ -532,6 +532,7 @@ if [ "$myTPOT_DEPLOYMENT_TYPE" == "iso" ] || [ "$myTPOT_DEPLOYMENT_TYPE" == "use
     "\nRequired: 8-16GB RAM, 128GB SSD\nRecommended: 16GB RAM, 256GB SSD" 17 70 1 \
     "STANDARD" "T-Pot Standalone with everything you need" \
     "HIVE" "T-Pot Hive: ELK & Tools" \
+    "ELK" "T-Pot ELK: ELK" \
     "HIVE_SENSOR" "T-Pot Hive Sensor: Honeypots & NSM" \
     "INDUSTRIAL" "Same as Standard with focus on Conpot" \
     "LOG4J" "Log4Pot, ELK, NSM & Tools" \
@@ -751,6 +752,10 @@ case $myCONF_TPOT_FLAVOR in
   HIVE)
     fuBANNER "HIVE"
     ln -s /opt/tpot/etc/compose/hive.yml $myTPOTCOMPOSE
+  ;;
+  ELK)
+    fuBANNER "ELK"
+    ln -s /opt/tpot/etc/compose/elk.yml $myTPOTCOMPOSE
   ;;
   HIVE_SENSOR)
     fuBANNER "HIVE_SENSOR"
