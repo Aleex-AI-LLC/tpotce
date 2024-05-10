@@ -251,7 +251,7 @@ services:
      - ddospot_local
     ports:
      - "19:19/udp"
-     - "53:53/udp"
+#     - "53:53/udp"
      - "123:123/udp"
 #     - "161:161/udp"
      - "1900:1900/udp"
