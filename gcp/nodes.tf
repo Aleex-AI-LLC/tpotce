@@ -41,7 +41,7 @@ resource "google_compute_instance" "honey" {
   }
 
   metadata = {
-    ssh-keys = "root:${file(var.pub_key)}"
+    ssh-keys = "debian:${file(var.pub_key)}"
     startup-script = templatefile("${path.module}/startup.sh.tpl", {
       DEVICE = "/dev/disk/by-id/google-volume-${each.key}"
       MOUNT_POINT = "/mnt/tpot"
@@ -52,15 +52,11 @@ resource "google_compute_instance" "honey" {
   }
 
   network_interface {
-    network = "default"
+    network = google_compute_network.aleex_vpc.name
+    # subnetwork = google_compute_subnetwork.aleex_subnet.name
+
     access_config {}
   }
-#   network_interface {
-#     network = google_compute_network.aleex_vpc.name
-#     # subnetwork = google_compute_subnetwork.aleex_subnet.name
-
-#     access_config {}
-#   }
 
   lifecycle {
     ignore_changes = [boot_disk[0].initialize_params[0].image]
@@ -70,7 +66,7 @@ resource "google_compute_instance" "honey" {
     host = self.network_interface[0].access_config[0].nat_ip
     user = "root"
     private_key = file(var.pvt_key)
-    timeout = "2m"
+    timeout = "1m"
   }
 }
 

@@ -1,11 +1,11 @@
 # Public node firewall (SSH, HTTP-alt, HTTPS, Swarm management, etc.)
 resource "google_compute_firewall" "public_node" {
   name = "aleex-honey-firewall"
-  network = "default"
+  network = google_compute_network.aleex_vpc.name
 
   allow {
     protocol = "tcp"
-    ports = ["22", "8080", "443"]
+    ports = ["22", "64295", "8080", "443"]
   }
   allow {
     protocol = "tcp"
@@ -36,7 +36,7 @@ resource "google_compute_firewall" "public_node" {
 
 #   source_ranges = ["0.0.0.0/0"]
 
-#   target_tags = ["aleex"]
+#   target_tags = ["honey"]
 # }
 
 # # Internal nodes firewall (full TCP/UDP/ICMP inside VPC only)

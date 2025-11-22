@@ -1,7 +1,7 @@
-# resource "google_compute_network" "aleex_vpc" {
-#   name = "aleex-vpc"
-#   auto_create_subnetworks = true
-# }
+resource "google_compute_network" "aleex_vpc" {
+  name = "aleex-vpc"
+  auto_create_subnetworks = true
+}
 
 # resource "google_compute_subnetwork" "aleex_subnet" {
 #   name = "scytale-subnet"
