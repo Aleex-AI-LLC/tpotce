@@ -11,8 +11,6 @@ echo "${DEVICE} ${MOUNT_POINT} ext4 defaults 0 2" >> /etc/fstab
 #create aleex user
 USERNAME="aleex"
 GROUPNAME="aleex"
-
-# Create group if it doesn't exist
 if ! getent group "$GROUPNAME" > /dev/null; then
     groupadd "$GROUPNAME"
 fi
@@ -25,3 +23,5 @@ usermod -aG docker "$USERNAME"
 if [ "${is_master}" != "true" ]; then
     echo "Registering with master at ${master_ip}"
 fi
+
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.default

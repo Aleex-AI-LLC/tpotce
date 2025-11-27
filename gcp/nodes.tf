@@ -81,10 +81,3 @@ resource "google_compute_disk" "db_volume" {
   zone = each.value
   size = 80
 }
-
-# resource "google_compute_disk" "db_volume" {
-#   name = "volume-honey-01"
-#   type = "pd-ssd"
-#   zone = var.gcp_zone
-#   size = 80
-# }
