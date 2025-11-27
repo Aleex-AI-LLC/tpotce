@@ -80,50 +80,22 @@ resource "null_resource" "tpotce_disable" {
         always_run = timestamp()
     }
 
-    connection {
-        host = each.value.network_interface[0].access_config[0].nat_ip
-        type = "ssh"
-        port = 64295
-        user = "debian"
-        private_key = file(var.pvt_key)
-        timeout = "1m"
+    provisioner "local-exec" {
+        command = <<-EOT
+        scp -i ${var.pvt_key} \
+            -o StrictHostKeyChecking=no \
+            -P 64295  \
+            stop-tpot.sh \
+            debian@${each.value.network_interface[0].access_config[0].nat_ip}:/tmp/stop-tpot.sh
+        ssh -i ${var.pvt_key} \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -p 64295  \
+            debian@${each.value.network_interface[0].access_config[0].nat_ip} \
+            "sh /tmp/stop-tpot.sh"
+        EOT
+        interpreter = ["bash", "-c"]
     }
-
-provisioner "local-exec" {
-  command = <<-EOT
-  ssh -i ${var.pvt_key} \
-    -o BatchMode=yes \
-    -o StrictHostKeyChecking=no \
-    -p 64295  \
-    debian@${each.value.network_interface[0].access_config[0].nat_ip} \
-    "echo AAAA"
-  EOT
-  interpreter = ["bash", "-c"]
-}
-
-#   # Upload your known-good script
-#   provisioner "file" {
-#     source = "stop-tpot.sh"
-#     destination = "/tmp/stop-tpot.sh"
-#   }
-
-#   # Execute it explicitly with bash
-#   provisioner "remote-exec" {
-#     inline = [
-#       "ls -l /tmp/stop-tpot.sh"
-#     ]
-#   }
-
-#     provisioner "remote-exec" {
-#         inline = [
-#             <<-EOT
-# sudo systemctl stop tpot
-# sudo cp /etc/ssh/sshd_config.default /etc/ssh/sshd_config
-# sudo systemctl restart ssh
-# sudo ss -tlnp
-#             EOT
-#         ]
-#     }
 }
 
 # resource "null_resource" "docker_install" {
