@@ -5,4 +5,4 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-terraform apply -var "gcp_project=gen-lang-client-0916241324" -var "gcp_credentials_file=$1" -var pub_key=~/.ssh/terraform.pub -var pvt_key=~/.ssh/terraform -auto-approve  -target=null_resource.tpotce_disable
+terraform apply -var "gcp_project=gen-lang-client-0916241324" -var "gcp_credentials_file=$1" -var pub_key=~/.ssh/terraform.pub -var pvt_key=~/.ssh/terraform -var stop_tpot=true -auto-approve  -target=null_resource.tpotce_disable
