@@ -1,8 +1,3 @@
-variable "honey_count" {
-  type = number
-  default = 2
-}
-
 variable "gcp_project" {
   description = "GCP project ID"
   type = string
@@ -39,9 +34,15 @@ variable "pvt_key" {
   type = string
 }
 
-# terraform apply -var "do_token =${DO_TOKEN}" -var "docker_build =true"
-variable "docker_build" {
-  description = "Build docker images on manager and push them to the registry"
+# terraform apply -var "do_token =${DO_TOKEN}" -var "stop_tpot =true"
+variable "stop_tpot" {
+  description = "Stop the tpot service on all nodes and re-enable port 22"
+  type = bool
+  default = false
+}
+
+variable "start_tpot" {
+  description = "Start the tpot service after re-enabling port 64295 for ssh"
   type = bool
   default = false
 }

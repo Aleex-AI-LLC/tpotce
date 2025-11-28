@@ -2,6 +2,7 @@ locals {
   master_name = "hive"
   sensor_names = [for i in range(1, 3) : "honey-${i}"]
   honey_names = concat([local.master_name], local.sensor_names)
+  # honey_names = [local.master_name]
   honey_zones = ["europe-west4-a", "asia-east1-a", "us-west2-a", "australia-southeast1-c"]
 
   honey_map = { for idx, name in local.honey_names :
