@@ -19,6 +19,7 @@ if ! id -u "$USERNAME" > /dev/null 2>&1; then
 fi
 
 usermod -aG docker "$USERNAME"
+usermod -a -G sudo "$USERNAME"
 
 if [ "${is_master}" != "true" ]; then
     echo "Registering with master at ${master_ip}"
