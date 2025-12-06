@@ -2,7 +2,6 @@ locals {
   master_name = "hive"
   sensor_names = [for i in range(1, 3) : "honey-${i}"]
   honey_names = concat([local.master_name], local.sensor_names)
-  # honey_names = [local.master_name]
   honey_zones = ["europe-west4-a", "asia-east1-a", "us-west2-a", "australia-southeast1-c"]
 
   honey_map = { for idx, name in local.honey_names :
@@ -22,11 +21,6 @@ resource "google_compute_instance" "honey" {
   machine_type = "n2d-highmem-2"
   tags = ["honey"]
 
-  depends_on = [
-    # google_service_account.registry_server_account, 
-    #             google_project_iam_member.vm_artifact_reader
-  ]
-
   allow_stopping_for_update = true
 
   boot_disk {
@@ -42,7 +36,7 @@ resource "google_compute_instance" "honey" {
   }
 
   metadata = {
-    ssh-keys = "debian:${file(var.pub_key)}"
+    ssh-keys = "aleex:${file(var.pub_key)}"
     startup-script = templatefile("${path.module}/startup.sh.tpl", {
       DEVICE = "/dev/disk/by-id/google-volume-${each.key}"
       MOUNT_POINT = "/mnt/tpot"
