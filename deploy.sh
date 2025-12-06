@@ -128,7 +128,8 @@ fi
 export myTPOT_HIVE_USER
 export myTPOT_HIVE_IP
 
-ANSIBLE_LOG_PATH=${HOME}/tpotce/data/deploy_sensor.log ansible-playbook ${myANSIBLE_TPOT_PLAYBOOK} -i ${mySENSOR_IP}, -c ssh -u ${mySSHUSER} --ask-become-pass -e "ansible_port=${myANSIBLE_PORT}"
+#ANSIBLE_LOG_PATH=${HOME}/tpotce/data/deploy_sensor.log ansible-playbook ${myANSIBLE_TPOT_PLAYBOOK} -i ${mySENSOR_IP}, -c ssh -u ${mySSHUSER} --ask-become-pass -e "ansible_port=${myANSIBLE_PORT}"
+ANSIBLE_LOG_PATH=${HOME}/tpotce/data/deploy_sensor.log ansible-playbook ${myANSIBLE_TPOT_PLAYBOOK} -i ${mySENSOR_IP}, -c ssh -u ${mySSHUSER} -e "ansible_port=${myANSIBLE_PORT}"
 
 if [ "$?" == 0 ];
   then
