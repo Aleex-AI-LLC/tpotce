@@ -182,8 +182,8 @@ resource "null_resource" "tpotce_deploy_sensors" {
             -o BatchMode=yes \
             -o StrictHostKeyChecking=no \
             -p 64295 \
-            aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            "cd tpotce/gcp ; bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} ${local.hive.network_interface[0].access_config[0].nat_ip}"
+            aleex@${local.hive.network_interface[0].access_config[0].nat_ip} \
+            "cd ~/tpotce/gcp ; echo \"DEPLOY SENSOR ${each.value.network_interface[0].access_config[0].nat_ip}\"; bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} ${local.hive.network_interface[0].access_config[0].nat_ip}"
         EOT
     }
 }
