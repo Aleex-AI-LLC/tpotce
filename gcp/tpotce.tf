@@ -115,20 +115,7 @@ resource "null_resource" "tpotce_hive_key" {
     provisioner "local-exec" {
         interpreter = ["bash", "-c"]
         command = <<-EOT
-        echo "SLEEPING"
-        date
-        sleep 180
-        echo "WAKING UP"
-        date
-        cp ~/.ssh/known_hosts ~/.ssh/known_hosts.backup
-        grep -v ":64295" ~/.ssh/known_hosts.backup > ~/.ssh/known_hosts
-        [ -e id_rsa ] || ssh-keygen -t rsa -b 4096 -f id_rsa -N '' -q
-        scp -i ${var.pvt_key} \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=no \
-            -P 64295  \
-            id_rsa* \
-            aleex@${each.value.network_interface[0].access_config[0].nat_ip}:~/.ssh/
+        bash deploy-hive.sh ${each.value.network_interface[0].access_config[0].nat_ip}
         EOT
     }
 }
@@ -183,7 +170,12 @@ resource "null_resource" "tpotce_deploy_sensors" {
             -o StrictHostKeyChecking=no \
             -p 64295 \
             aleex@${local.hive.network_interface[0].access_config[0].nat_ip} \
-            "cd ~/tpotce/gcp ; echo \"DEPLOY SENSOR ${each.value.network_interface[0].access_config[0].nat_ip}\"; bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} ${local.hive.network_interface[0].access_config[0].nat_ip}"
+            "bash -i <<INPUT
+cd ~/tpotce/gcp
+echo \"DEPLOY SENSOR ${each.value.network_interface[0].access_config[0].nat_ip}\"
+bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} \
+                      ${local.hive.network_interface[0].access_config[0].nat_ip}
+            INPUT"
         EOT
     }
 }
