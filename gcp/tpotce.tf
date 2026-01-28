@@ -27,9 +27,16 @@ resource "null_resource" "tpotce_hive_install" {
 echo "INSTALLING TPOT"
 sudo apt-get update -y
 sudo apt-get install -y git
+sudo cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.default
 cd ~
 git clone https://github.com/Aleex-AI-LLC/tpotce
 cd tpotce
+mkdir -p /mnt/tpot/data
+groupadd --gid 2000 tpot
+useradd --uid 2000 --gid tpot --system --shell /bin/false --home /nonexistent tpot
+chown -R tpot /mnt/tpot/
+chgrp -R tpot /mnt/tpot/
+ln -s /mnt/tpot/data data
 cat <<INPUT | ./install.sh
 y
 h
@@ -39,10 +46,7 @@ Aleex123Aleex
 Aleex123Aleex
 INPUT
 echo "REMOVING CONFLICTING PACKAGES"
-# remove conflicting services
 sudo apt -y purge exim4 exim4-base exim4-config exim4-daemon-light
-# sudo systemctl disable systemd-resolved --now
-# sudo cp resolv.conf /etc/resolv.conf
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.tpot
 cp ssh.config ~/.ssh/config
 chmod 644 ~/.ssh/config
@@ -77,18 +81,22 @@ resource "null_resource" "tpotce_sensor_install" {
 echo "INSTALLING TPOT ${each.key}"
 sudo apt-get update -y
 sudo apt-get install -y git
+sudo cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.default
 cd ~
 git clone https://github.com/Aleex-AI-LLC/tpotce
 cd tpotce
+mkdir -p /mnt/tpot/data
+groupadd --gid 2000 tpot
+useradd --uid 2000 --gid tpot --system --shell /bin/false --home /nonexistent tpot
+chown tpot /mnt/tpot/
+chgrp tpot /mnt/tpot/
+ln -s /mnt/tpot/data data
 cat <<INPUT | ./install.sh
 y
 s
 INPUT
 echo "REMOVING CONFLICTING PACKAGES"
-# remove conflicting services
 sudo apt -y purge exim4 exim4-base exim4-config exim4-daemon-light
-# sudo systemctl disable systemd-resolved --now
-# sudo cp resolv.conf /etc/resolv.conf
 sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.tpot
 echo "REBOOTING"
 sudo reboot
@@ -194,7 +202,11 @@ resource "null_resource" "tpotce_disable" {
             -o StrictHostKeyChecking=no \
             -p 64295  \
             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            "sh ~/tpotce/gcp/stop-tpot.sh"
+            "bash -i <<INPUT
+sh ~/tpotce/gcp/stop-tpot.sh"
+cp /etc/ssh/sshd_config.default /etc/ssh/sshd_config
+systemctl restart ssh.service
+            INPUT"
         EOT
         interpreter = ["bash", "-c"]
     }
@@ -214,7 +226,11 @@ resource "null_resource" "tpotce_enable" {
             -o StrictHostKeyChecking=no \
             -p 64295  \
             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            "sh ~/tpotce/gcp/start-tpot.sh"
+            "bash -i <<INPUT
+sh ~/tpotce/gcp/start-tpot.sh"
+cp /etc/ssh/sshd_config.default /etc/ssh/sshd_config
+systemctl restart ssh.service
+            INPUT"
         EOT
         interpreter = ["bash", "-c"]
     }
