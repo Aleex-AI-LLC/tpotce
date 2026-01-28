@@ -31,7 +31,7 @@ sudo cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.default
 cd ~
 git clone https://github.com/Aleex-AI-LLC/tpotce
 cd tpotce
-mkdir -p /mnt/tpot/data
+mkdir -p /mnt/tpot/data/
 groupadd --gid 2000 tpot
 useradd --uid 2000 --gid tpot --system --shell /bin/false --home /nonexistent tpot
 chown -R tpot /mnt/tpot/
@@ -85,7 +85,7 @@ sudo cp -n /etc/ssh/sshd_config /etc/ssh/sshd_config.default
 cd ~
 git clone https://github.com/Aleex-AI-LLC/tpotce
 cd tpotce
-mkdir -p /mnt/tpot/data
+mkdir -p /mnt/tpot/data/
 groupadd --gid 2000 tpot
 useradd --uid 2000 --gid tpot --system --shell /bin/false --home /nonexistent tpot
 chown tpot /mnt/tpot/
@@ -123,7 +123,40 @@ resource "null_resource" "tpotce_hive_key" {
     provisioner "local-exec" {
         interpreter = ["bash", "-c"]
         command = <<-EOT
-        bash deploy-hive.sh ${each.value.network_interface[0].access_config[0].nat_ip}
+        echo "WAITING FOR HIVE TO REBOOT"
+        sleep 10
+        echo "WAKING UP"
+        cp ~/.ssh/known_hosts ~/.ssh/known_hosts.backup
+        grep -v ":64295" ~/.ssh/known_hosts.backup > ~/.ssh/known_hosts
+        echo "GENERATING/UPLOADING SSH KEY"
+        [ -e id_rsa ] || ssh-keygen -t rsa -b 4096 -f id_rsa -N '' -q
+        scp -i ${var.pvt_key} \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -P 64295  \
+            id_rsa* \
+            aleex@${each.value.network_interface[0].access_config[0].nat_ip}:~/.ssh/
+        echo "GENERATING SSL CERT"
+        ssh -i ${var.pvt_key} \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=no \
+            -p 64295  \
+            aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
+        <<INPUT
+openssl req \
+    -nodes \
+    -x509 \
+    -sha512 \
+    -newkey rsa:8192 \
+    -keyout ~/tpotce/nginx.key \
+    -out ~/tpotce/nginx.crt \
+    -days 365 \
+    -subj '/C=ES/ST=Madrid/O=Aleex/CN=internal-web' \
+    -addext 'subjectAltName=IP:172.17.0.1,IP:${each.value.network_interface[0].access_config[0].nat_ip}'
+sudo mkdir -p ~/tpotce/data/nginx/cert/
+sudo chmod 774 ~/tpotce/data/nginx/cert/*
+sudo chown tpot:tpot ~/tpotce/data/nginx/cert/*
+            INPUT
         EOT
     }
 }
@@ -178,12 +211,11 @@ resource "null_resource" "tpotce_deploy_sensors" {
             -o StrictHostKeyChecking=no \
             -p 64295 \
             aleex@${local.hive.network_interface[0].access_config[0].nat_ip} \
-            "bash -i <<INPUT
+            <<INPUT
 cd ~/tpotce/gcp
-echo \"DEPLOY SENSOR ${each.value.network_interface[0].access_config[0].nat_ip}\"
 bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} \
                       ${local.hive.network_interface[0].access_config[0].nat_ip}
-            INPUT"
+            INPUT
         EOT
     }
 }
@@ -202,11 +234,11 @@ resource "null_resource" "tpotce_disable" {
             -o StrictHostKeyChecking=no \
             -p 64295  \
             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            "bash -i <<INPUT
+            <<INPUT
 sh ~/tpotce/gcp/stop-tpot.sh"
 cp /etc/ssh/sshd_config.default /etc/ssh/sshd_config
 systemctl restart ssh.service
-            INPUT"
+            INPUT
         EOT
         interpreter = ["bash", "-c"]
     }
@@ -226,11 +258,11 @@ resource "null_resource" "tpotce_enable" {
             -o StrictHostKeyChecking=no \
             -p 64295  \
             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            "bash -i <<INPUT
+            <<INPUT
 sh ~/tpotce/gcp/start-tpot.sh"
 cp /etc/ssh/sshd_config.default /etc/ssh/sshd_config
 systemctl restart ssh.service
-            INPUT"
+            INPUT
         EOT
         interpreter = ["bash", "-c"]
     }
