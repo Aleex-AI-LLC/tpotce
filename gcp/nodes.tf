@@ -2,7 +2,7 @@ locals {
   master_name = "hive"
   sensor_names = [for i in range(1, 3) : "honey-${i}"]
   honey_names = concat([local.master_name], local.sensor_names)
-  honey_zones = ["europe-west4-a", "asia-east1-a", "us-west2-a", "australia-southeast1-c"]
+  honey_zones = ["europe-west4-a", "asia-east1-a", "us-west2-b", "australia-southeast1-c"]
 
   honey_map = { for idx, name in local.honey_names :
     name => (
@@ -18,7 +18,7 @@ resource "google_compute_instance" "honey" {
 
   name = each.key
   zone = each.value
-  machine_type = "n2d-highmem-2"
+  machine_type = "n2d-standard-4"
   tags = ["honey"]
 
   allow_stopping_for_update = true
@@ -75,4 +75,23 @@ resource "google_compute_disk" "db_volume" {
   type = "pd-ssd"
   zone = each.value
   size = 80
+}
+
+resource "null_resource" "node_list" {
+    for_each = var.node_list ? google_compute_instance.honey : {}
+
+    triggers = {
+        always_run = timestamp()
+    }
+
+    provisioner "local-exec" {
+        command = <<-EOT
+echo "*****************************"
+echo "NODE: " ${each.key} " " \
+      ${local.honey_map[each.key]} " " \
+      ${each.value.network_interface[0].access_config[0].nat_ip}
+echo "*****************************"
+        EOT
+        interpreter = ["bash", "-c"]
+    }
 }

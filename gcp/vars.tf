@@ -46,3 +46,21 @@ variable "start_tpot" {
   type = bool
   default = false
 }
+
+variable "reboot_tpot" {
+  description = "Reboot all nodes"
+  type = bool
+  default = false
+}
+
+variable "status_tpot" {
+  description = "Get honey status"
+  type = bool
+  default = false
+}
+
+variable "node_list" {
+  description = "List node names/zones"
+  type = bool
+  default = false
+}
