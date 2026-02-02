@@ -7,4 +7,4 @@ fi
 
 terraform apply -var "gcp_project=gen-lang-client-0916241324" -var "gcp_credentials_file=$1" -var pub_key=~/.ssh/terraform.pub -var pvt_key=~/.ssh/terraform | tee terraform.log
 
-bash ./tf-list.sh $1
+bash $(dirname "$0")/tf-list.sh $1

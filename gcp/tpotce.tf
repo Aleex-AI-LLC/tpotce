@@ -2,14 +2,23 @@ locals {
   hive = one(
     [for inst in google_compute_instance.honey : inst if inst.name == "hive"]
   )
+
+  hive_map = {
+    for inst in google_compute_instance.honey :
+    inst.name => inst
+    if inst.name == "hive"
+  }
+
+  sensors = {
+    for k, inst in google_compute_instance.honey :
+        k => inst
+        if inst.name != "hive"
+    }
+
 }
 
 resource "null_resource" "tpotce_hive_install" {
-    for_each = {
-        for k, inst in google_compute_instance.honey :
-        k => inst
-        if inst.name == "hive"
-    }
+    for_each = local.hive_map
 
     depends_on = [google_compute_instance.honey]
 
@@ -65,11 +74,7 @@ echo "REBOOTED"
 }
 
 resource "null_resource" "tpotce_sensor_install" {
-    for_each = {
-        for k, inst in google_compute_instance.honey :
-        k => inst
-        if inst.name != "hive"
-    }
+    for_each = local.sensors
 
     depends_on = [google_compute_instance.honey]
 
@@ -113,12 +118,7 @@ echo "REBOOTED"
 }
 
 resource "null_resource" "tpotce_hive_key" {
-
-    for_each = {
-        for k, inst in google_compute_instance.honey :
-        k => inst
-        if inst.name == "hive"
-    }
+    for_each = local.hive_map
 
     depends_on = [null_resource.tpotce_sensor_install]
 
@@ -130,7 +130,7 @@ resource "null_resource" "tpotce_hive_key" {
         interpreter = ["bash", "-c"]
         command = <<-EOT
         echo "WAITING FOR HIVE TO REBOOT"
-        sleep 240
+        sleep 40
         echo "WAKING UP"
         cp ~/.ssh/known_hosts ~/.ssh/known_hosts.backup
         grep -v ":64295" ~/.ssh/known_hosts.backup > ~/.ssh/known_hosts
@@ -178,12 +178,7 @@ INPUT
 }
 
 resource "null_resource" "tpotce_sensor_key" {
-
-    for_each = {
-        for k, inst in google_compute_instance.honey :
-        k => inst
-        if inst.name != "hive"
-    }
+    for_each = local.sensors
 
     depends_on = [null_resource.tpotce_hive_key]
 
@@ -206,34 +201,35 @@ resource "null_resource" "tpotce_sensor_key" {
 }
 
 resource "null_resource" "tpotce_deploy_sensors" {
-
-    for_each = {
-        for k, inst in google_compute_instance.honey :
-        k => inst
-        if inst.name != "hive"
-    }
-
-    depends_on = [null_resource.tpotce_sensor_key]
-
     triggers = {
         always_run = timestamp()
     }
 
+    depends_on = [
+        null_resource.tpotce_sensor_key
+    ]
+
     provisioner "local-exec" {
         interpreter = ["bash", "-c"]
+
+        environment = {
+            ordered_honey = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
+            hive_ip = local.hive.network_interface[0].access_config[0].nat_ip
+        }
+
         command = <<-EOT
-        ssh -i ${var.pvt_key} \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=no \
-            -p 64295 \
-            aleex@${local.hive.network_interface[0].access_config[0].nat_ip} \
-            <<INPUT
-cd ~/tpotce/gcp
-echo "DEPLOYING SENSOR"
-bash deploy-sensor.sh ${each.value.network_interface[0].access_config[0].nat_ip} \
-                      ${local.hive.network_interface[0].access_config[0].nat_ip}
-            INPUT
-        EOT
+for inst in $ordered_honey; do
+    ssh -i ${var.pvt_key} \
+        -o BatchMode=yes \
+        -o StrictHostKeyChecking=no \
+        -p 64295 \
+        aleex@$hive_ip <<INPUT
+    cd ~/tpotce/gcp
+    echo "DEPLOYING SENSOR $inst"
+    bash deploy-sensor.sh $inst $hive_ip
+INPUT
+done
+EOT
     }
 }
 
@@ -328,7 +324,7 @@ echo "*****************************"
 echo "STATUS " ${each.key}
 echo "*****************************"
 docker ps --format '{{.Names}}: {{.Status}}'
-docker ps -a --format '{{.Names}}: {{.Status}}' | grep -v Up
+docker ps -a --format '{{.Names}}: {{.Status}}' | grep -v Up; true
 INPUT
         EOT
         interpreter = ["bash", "-c"]
