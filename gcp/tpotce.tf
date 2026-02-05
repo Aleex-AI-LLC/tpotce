@@ -120,7 +120,8 @@ echo "REBOOTED"
 resource "null_resource" "tpotce_hive_key" {
     for_each = local.hive_map
 
-    depends_on = [null_resource.tpotce_sensor_install]
+    depends_on = [null_resource.tpotce_hive_install,
+                  null_resource.tpotce_sensor_install]
 
     triggers = {
         always_run = timestamp()
@@ -130,7 +131,7 @@ resource "null_resource" "tpotce_hive_key" {
         interpreter = ["bash", "-c"]
         command = <<-EOT
         echo "WAITING FOR HIVE TO REBOOT"
-        sleep 40
+        sleep 240
         echo "WAKING UP"
         cp ~/.ssh/known_hosts ~/.ssh/known_hosts.backup
         grep -v ":64295" ~/.ssh/known_hosts.backup > ~/.ssh/known_hosts
@@ -213,12 +214,12 @@ resource "null_resource" "tpotce_deploy_sensors" {
         interpreter = ["bash", "-c"]
 
         environment = {
-            ordered_honey = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
+            ordered_honeys = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
             hive_ip = local.hive.network_interface[0].access_config[0].nat_ip
         }
 
         command = <<-EOT
-for inst in $ordered_honey; do
+for inst in $ordered_honeys; do
     ssh -i ${var.pvt_key} \
         -o BatchMode=yes \
         -o StrictHostKeyChecking=no \
@@ -282,28 +283,114 @@ INPUT
     }
 }
 
+# resource "null_resource" "tpotce_reboot_hive" {
+#     for_each = var.reboot_tpot ? local.hive_map : {}
+
+#     triggers = {
+#         always_run = timestamp()
+#     }
+
+#     provisioner "local-exec" {
+#         command = <<-EOT
+#         ssh -i ${var.pvt_key} \
+#             -o BatchMode=yes \
+#             -o StrictHostKeyChecking=no \
+#             -p 64295  \
+#             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
+#             <<INPUT
+# echo "REBOOTING " ${each.key}
+# sudo reboot
+# INPUT
+#         EOT
+#         interpreter = ["bash", "-c"]
+#     }
+# }
+
+# resource "null_resource" "tpotce_reboot_sensors" {
+#     for_each = var.reboot_tpot ? local.sensors : {}
+
+#     triggers = {
+#         always_run = timestamp()
+#     }
+
+#     depends_on = [
+#         null_resource.tpotce_reboot_hive
+#     ]
+
+#     provisioner "local-exec" {
+#         command = <<-EOT
+#         ssh -i ${var.pvt_key} \
+#             -o BatchMode=yes \
+#             -o StrictHostKeyChecking=no \
+#             -p 64295  \
+#             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
+#             <<INPUT
+# echo "REBOOTING " ${each.key}
+# sudo reboot
+# INPUT
+#         EOT
+#         interpreter = ["bash", "-c"]
+#     }
+# }
+
 resource "null_resource" "tpotce_reboot" {
-    for_each = var.reboot_tpot ? google_compute_instance.honey : {}
+    count = var.reboot_tpot ? 1 : 0
 
     triggers = {
         always_run = timestamp()
     }
 
     provisioner "local-exec" {
+        interpreter = ["bash", "-c"]
+        environment = {
+            ordered_honeys = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
+            hive_ip = local.hive.network_interface[0].access_config[0].nat_ip
+        }
         command = <<-EOT
-        ssh -i ${var.pvt_key} \
-            -o BatchMode=yes \
-            -o StrictHostKeyChecking=no \
-            -p 64295  \
-            aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
-            <<INPUT
-echo "REBOOTING " ${each.key}
+    ssh -i ${var.pvt_key} \
+        -o BatchMode=yes \
+        -o StrictHostKeyChecking=no \
+        -p 64295 \
+        aleex@$hive_ip <<INPUT
+echo "REBOOTING HIVE"
 sudo reboot
 INPUT
-        EOT
-        interpreter = ["bash", "-c"]
+for inst in $ordered_honeys; do
+    ssh -i ${var.pvt_key} \
+        -o BatchMode=yes \
+        -o StrictHostKeyChecking=no \
+        -p 64295 \
+        aleex@$inst <<INPUT
+echo "REBOOTING " $inst
+sudo reboot
+INPUT
+done
+EOT
     }
 }
+
+# resource "null_resource" "tpotce_reboot" {
+#     for_each = var.reboot_tpot ? google_compute_instance.honey : {}
+
+#     triggers = {
+#         always_run = timestamp()
+#     }
+
+#     provisioner "local-exec" {
+#         interpreter = ["bash", "-c"]
+#         command = <<-EOT
+#         ssh -i ${var.pvt_key} \
+#             -o BatchMode=yes \
+#             -o StrictHostKeyChecking=no \
+#             -p 64295  \
+#             aleex@${each.value.network_interface[0].access_config[0].nat_ip} \
+#             <<INPUT
+# echo "REBOOTING " $inst
+# sudo reboot
+# INPUT
+#         EOT
+#     }
+# }
 
 resource "null_resource" "tpotce_status" {
     for_each = var.status_tpot ? google_compute_instance.honey : {}
@@ -313,6 +400,7 @@ resource "null_resource" "tpotce_status" {
     }
 
     provisioner "local-exec" {
+        interpreter = ["bash", "-c"]
         command = <<-EOT
         ssh -i ${var.pvt_key} \
             -o BatchMode=yes \
@@ -327,6 +415,5 @@ docker ps --format '{{.Names}}: {{.Status}}'
 docker ps -a --format '{{.Names}}: {{.Status}}' | grep -v Up; true
 INPUT
         EOT
-        interpreter = ["bash", "-c"]
     }
 }
