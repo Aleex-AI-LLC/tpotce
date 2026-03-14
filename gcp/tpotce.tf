@@ -214,7 +214,7 @@ resource "null_resource" "tpotce_deploy_sensors" {
         interpreter = ["bash", "-c"]
 
         environment = {
-            ordered_honeys = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
+            ordered_honeys = join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip])
             hive_ip = local.hive.network_interface[0].access_config[0].nat_ip
         }
 
@@ -225,7 +225,7 @@ for inst in $ordered_honeys; do
         -o StrictHostKeyChecking=no \
         -p 64295 \
         aleex@$hive_ip <<INPUT
-    cd ~/tpotce/gcp
+    cd ~/tpotce/gcp/scripts
     echo "DEPLOYING SENSOR $inst"
     bash deploy-sensor.sh $inst $hive_ip
 INPUT
@@ -343,7 +343,7 @@ resource "null_resource" "tpotce_reboot" {
     provisioner "local-exec" {
         interpreter = ["bash", "-c"]
         environment = {
-            ordered_honeys = nonsensitive(join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip]))
+            ordered_honeys = join(" ", [for inst in local.sensors : inst.network_interface[0].access_config[0].nat_ip])
             hive_ip = local.hive.network_interface[0].access_config[0].nat_ip
         }
         command = <<-EOT

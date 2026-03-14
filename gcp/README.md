@@ -2,32 +2,32 @@
 
 ## APPLY (user your own GCP auth json):
 
-`sh tools/tf-apply.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-apply.sh rank-mdr-terraform-key.json`
 
 ## DESTROY only the nodes (use your own GCP auth json):
 
-`sh tools/tf-destroy-instances.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-destroy-instances.sh rank-mdr-terraform-key.json`
 
 ## DESTROY everything (use your own GCP auth json):
 
-`sh tools/tf-destroy.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-destroy.sh rank-mdr-terraform-key.json`
 
 ## REBOOT all honeys
 
-`sh tools/tf-apply.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-apply.sh rank-mdr-terraform-key.json`
 
 ## STATUS info
 
-`sh tools/tf-status.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-status.sh rank-mdr-terraform-key.json`
 
 ## LIST nodes
 
-`sh tools/tf-list.sh gen-lang-client-0916241324-6871dd3df74b.json`
+`sh tools/tf-list.sh rank-mdr-terraform-key.json`
 
 ## SSH connect (mind of the ssh port):
 
 ```
-gcloud compute ssh --zone "europe-west4-a" "hive" --project "gen-lang-client-0916241324" --ssh-flag="-p 64295"
+gcloud compute ssh --zone "europe-west4-a" "hive" --project "rank-mdr" --ssh-flag="-p 64295"
 
 sudo su - aleex
 cd tpotce

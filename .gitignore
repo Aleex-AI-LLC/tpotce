@@ -10,3 +10,4 @@ install_tpot.log
 *.tfstate.backup
 *.terraform.lock.hcl
 
+rank-mdr-terraform-key.json
