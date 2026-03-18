@@ -715,6 +715,9 @@ services:
     pull_policy: ${TPOT_PULL_POLICY}
     volumes:
      - ${TPOT_DATA_PATH}:/data
+     - ./docker/elk/logstash/dist/logstash.conf:/etc/logstash/logstash.conf:ro
+     - ./docker/elk/logstash/dist/http_input.conf:/etc/logstash/http_input.conf:ro
+     - ./docker/elk/logstash/dist/entrypoint.sh:/usr/bin/entrypoint.sh:ro
 
 ## Map Redis Service
   map_redis:
