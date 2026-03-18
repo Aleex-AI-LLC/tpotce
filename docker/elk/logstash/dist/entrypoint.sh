@@ -97,4 +97,17 @@ if [ "$TPOT_TYPE" != "SENSOR" ];
 fi
 echo
 
+# If Rank-MDR integration is not configured, remove the HTTP output block
+# from the pipeline configs to avoid noisy connection errors in logs.
+if [ -z "$RANK_MDR_INGEST_URL" ] || [ "$RANK_MDR_INGEST_URL" = "not-configured" ]; then
+  echo "Rank-MDR integration not configured, disabling HTTP output forwarding."
+  for conf in /etc/logstash/logstash.conf /etc/logstash/http_input.conf; do
+    if [ -f "$conf" ]; then
+      sed -i '/# Forward.*Rank-MDR/,/^  }/d' "$conf"
+    fi
+  done
+else
+  echo "Rank-MDR integration enabled: $RANK_MDR_INGEST_URL"
+fi
+
 exec /usr/share/logstash/bin/logstash --config.reload.automatic
